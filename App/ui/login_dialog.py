@@ -27,7 +27,7 @@ class LoginDialog(QDialog):
         logo_label = QLabel("☕")
         logo_label.setObjectName("logoLabel")
         
-        title_label = QLabel("Tên Quán Cafe")
+        title_label = QLabel("Chill Quán")
         title_label.setObjectName("brandTitle")
         
         subtitle_label = QLabel("Hệ thống Quản lý Bán hàng")

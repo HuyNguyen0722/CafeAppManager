@@ -1,0 +1,20 @@
+[
+    {
+        "id": "a85848a6-4ff0-4155-a57a-3abdb1c4fae0",
+        "username": "admin",
+        "check_in_time": "2025-10-22T21:41:23.935928",
+        "check_out_time": "2025-10-22T21:41:27.854040"
+    },
+    {
+        "id": "7e7fe01c-7743-4e3d-9b6f-d983dbc06e76",
+        "username": "nhanvienA",
+        "check_in_time": "2025-10-22T21:43:49.727496",
+        "check_out_time": "2025-10-22T21:44:09.083676"
+    },
+    {
+        "id": "0092f75c-ebff-492f-befb-78b84e72e7dd",
+        "username": "admin",
+        "check_in_time": "2025-10-23T16:30:50.217098",
+        "check_out_time": "2025-10-23T16:31:05.484039"
+    }
+]

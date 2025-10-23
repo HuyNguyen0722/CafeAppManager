@@ -19,7 +19,7 @@
         "id": 3,
         "name": "Bàn 3",
         "status": "Trống",
-        "order": [],
+        "order": {},
         "total": 0,
         "employee": null
     },
@@ -27,7 +27,7 @@
         "id": 4,
         "name": "Bàn 4",
         "status": "Trống",
-        "order": [],
+        "order": {},
         "total": 0,
         "employee": null
     },
@@ -35,7 +35,7 @@
         "id": 5,
         "name": "Bàn 5",
         "status": "Trống",
-        "order": [],
+        "order": {},
         "total": 0,
         "employee": null
     },
@@ -43,7 +43,7 @@
         "id": 6,
         "name": "Bàn 6",
         "status": "Trống",
-        "order": [],
+        "order": {},
         "total": 0,
         "employee": null
     },
@@ -51,7 +51,7 @@
         "id": 7,
         "name": "Bàn 7",
         "status": "Trống",
-        "order": [],
+        "order": {},
         "total": 0,
         "employee": null
     },
@@ -59,7 +59,7 @@
         "id": 8,
         "name": "Bàn 8",
         "status": "Trống",
-        "order": [],
+        "order": {},
         "total": 0,
         "employee": null
     },
@@ -67,7 +67,7 @@
         "id": 9,
         "name": "Bàn 9",
         "status": "Trống",
-        "order": [],
+        "order": {},
         "total": 0,
         "employee": null
     },
@@ -75,7 +75,7 @@
         "id": 10,
         "name": "Bàn 10",
         "status": "Trống",
-        "order": [],
+        "order": {},
         "total": 0,
         "employee": null
     },
@@ -83,7 +83,7 @@
         "id": 11,
         "name": "Bàn 11",
         "status": "Trống",
-        "order": [],
+        "order": {},
         "total": 0,
         "employee": null
     },
@@ -91,7 +91,7 @@
         "id": 12,
         "name": "Bàn 12",
         "status": "Trống",
-        "order": [],
+        "order": {},
         "total": 0,
         "employee": null
     }

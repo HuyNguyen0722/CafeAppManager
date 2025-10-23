@@ -1,0 +1,119 @@
+[
+    {
+        "id": "bdcc869e-8f37-4da0-9155-fe08bad3f2cf",
+        "table_id": 1,
+        "employee": "admin",
+        "timestamp": "2025-10-22T14:49:11.979081",
+        "items": {
+            "Bánh Tiramisu": {
+                "price": 50000,
+                "quantity": 1
+            }
+        },
+        "total": 50000
+    },
+    {
+        "id": "815ee82c-48ea-4f55-9ee3-a7659646ccbd",
+        "table_id": 2,
+        "employee": "admin",
+        "timestamp": "2025-10-22T14:50:07.955631",
+        "items": {
+            "Bánh Tiramisu": {
+                "price": 50000,
+                "quantity": 12
+            }
+        },
+        "total": 600000
+    },
+    {
+        "id": "8b9e7f74-b85d-4f06-9740-81a95864e6b7",
+        "table_id": 1,
+        "employee": "admin",
+        "timestamp": "2025-10-22T21:11:14.792001",
+        "items": {
+            "Bánh Tiramisu": {
+                "price": 50000,
+                "quantity": 6
+            }
+        },
+        "total": 300000
+    },
+    {
+        "id": "8103a6e4-cbc8-4bb0-bd16-798b7ad02e0b",
+        "table_id": 1,
+        "employee": "admin",
+        "timestamp": "2025-10-22T21:15:33.707160",
+        "items": {
+            "Bánh Tiramisu": {
+                "price": 50000,
+                "quantity": 1
+            }
+        },
+        "total": 50000
+    },
+    {
+        "id": "e8d87677-4c7c-4cd4-b685-e72604da0060",
+        "table_id": 1,
+        "employee": "admin",
+        "timestamp": "2025-10-22T21:19:24.859509",
+        "items": {
+            "Bánh Tiramisu": {
+                "price": 50000,
+                "quantity": 1
+            }
+        },
+        "total": 50000
+    },
+    {
+        "id": "b2e82eb0-a7a2-460c-b93f-dfb68562027a",
+        "table_id": 1,
+        "employee": "nhanvienA",
+        "timestamp": "2025-10-22T21:25:51.003224",
+        "items": {
+            "Bánh Tiramisu": {
+                "price": 50000,
+                "quantity": 1
+            }
+        },
+        "total": 50000
+    },
+    {
+        "id": "904ba83d-6e41-43c6-a60c-6b262f134335",
+        "table_id": 2,
+        "employee": "nhanvienA",
+        "timestamp": "2025-10-22T21:44:18.847341",
+        "items": {
+            "Bánh Tiramisu": {
+                "price": 50000,
+                "quantity": 1
+            }
+        },
+        "total": 50000
+    },
+    {
+        "id": "b57002d1-1c4b-4864-8274-24d48c95f988",
+        "table_id": 1,
+        "employee": "nhanvienA",
+        "timestamp": "2025-10-22T21:44:26.684316",
+        "items": {
+            "Trà sữa Truyền thống": {
+                "price": 40000,
+                "quantity": 1
+            }
+        },
+        "total": 40000
+    },
+    {
+        "id": "291a62ca-76a2-431f-8efe-cc7e9e423914",
+        "table_id": 1,
+        "employee": "admin",
+        "timestamp": "2025-10-23T16:32:14.925694",
+        "items": {
+            "Bánh Tiramisu": {
+                "price": 50000,
+                "quantity": 1
+            }
+        },
+        "total": 50000
+    }
+]
