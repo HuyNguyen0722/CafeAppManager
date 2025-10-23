@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tên Quán Cafe - Hải Phòng</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css"
+      integrity="sha512-..."
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+  </head>
+  <body>
+    <nav class="navbar"></nav>
+
+    <section class="hero"></section>
+
+    <div id="menu" class="main-content container">
+      <h1>Thực đơn</h1>
+
+      <div id="category-tabs"></div>
+
+      <div id="menu-container">
+        <p>Đang tải menu...</p>
+      </div>
+
+      <section id="cart-section" class="cart-section">
+        <h2><i class="fa-solid fa-cart-shopping"></i> Giỏ hàng của bạn</h2>
+        <div id="cart-items">
+          <p class="empty-cart-message">Giỏ hàng đang trống.</p>
+        </div>
+        <div class="cart-summary">
+          <p><strong>Tổng cộng:</strong> <span id="cart-total">0 VND</span></p>
+          <button id="place-order-button" class="btn btn-success" disabled>
+            Đặt hàng
+          </button>
+        </div>
+      </section>
+      <hr />
+
+      <div id="contact" class="store-info"></div>
+    </div>
+
+    <footer class="footer"></footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
