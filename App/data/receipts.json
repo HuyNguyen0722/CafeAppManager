@@ -115,5 +115,58 @@
             }
         },
         "total": 50000
+    },
+    {
+        "id": "732a86e3-9438-40d2-aee0-dd31f69dd41c",
+        "table_id": 1,
+        "employee": "admin",
+        "timestamp": "2025-10-24T11:13:35.190221",
+        "items": {
+            "Bánh Tiramisu": {
+                "id": "b-001",
+                "price": 50000,
+                "quantity": 1
+            }
+        },
+        "total": 50000
+    },
+    {
+        "id": "b5697ffd-8b1b-4c9f-8d7e-828a314921d8",
+        "table_id": "takeaway",
+        "employee": "admin",
+        "timestamp": "2025-10-24T11:13:50.316887",
+        "items": {
+            "Cà phê Sữa": {
+                "id": "cf-002",
+                "price": 30000,
+                "quantity": 1
+            },
+            "Bạc Xỉu": {
+                "id": "cf-003",
+                "price": 35000,
+                "quantity": 1
+            },
+            "Cà phê muối": {
+                "id": "07e2d304-45e6-46da-b0f6-288551a663f5",
+                "price": 40000.0,
+                "quantity": 1
+            },
+            "Cà phê Đen": {
+                "id": "cf-001",
+                "price": 25000,
+                "quantity": 1
+            },
+            "Trà sữa Trân châu Đường đen": {
+                "id": "ts-002",
+                "price": 45000,
+                "quantity": 1
+            },
+            "Trà sữa Truyền thống": {
+                "id": "ts-001",
+                "price": 40000,
+                "quantity": 1
+            }
+        },
+        "total": 215000.0
     }
 ]

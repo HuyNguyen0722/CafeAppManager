@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tên Quán Cafe - Hải Phòng</title>
+    <title>Tên Quán Cafe - Đặt Hàng Online</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand:wght@400;500;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="style.css" />
@@ -20,12 +20,40 @@
     />
   </head>
   <body>
-    <nav class="navbar"></nav>
+    <nav class="navbar">
+      <div class="container">
+        <a href="#" class="navbar-brand logo-font">Tên Quán Cafe</a>
+        <ul class="navbar-nav">
+          <li><a href="#menu">Thực đơn</a></li>
+          <li><a href="#">Khuyến mãi</a></li>
+          <li><a href="#contact">Liên hệ</a></li>
+          <li>
+            <a href="#cart-section" class="cart-icon-wrapper">
+              <i class="fa-solid fa-cart-shopping"></i>
+              <span id="cart-count" class="cart-count">0</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </nav>
 
-    <section class="hero"></section>
+    <section class="hero-style-2">
+      <div class="hero-content container">
+        <div class="hero-text">
+          <h2>Hương Vị <br />Cà Phê <br />Tuyệt Hảo</h2>
+          <p>
+            Khám phá bộ sưu tập đồ uống đặc sắc và món bánh thơm ngon tại quán.
+          </p>
+          <a href="#menu" class="btn btn-hero">Xem Ngay Menu</a>
+        </div>
+        <div class="hero-image-side">
+          <img src="../App/data/images/your-coffee-image.png" alt="Cà phê" />
+        </div>
+      </div>
+    </section>
 
     <div id="menu" class="main-content container">
-      <h1>Thực đơn</h1>
+      <h2>Khám phá Thực đơn</h2>
 
       <div id="category-tabs"></div>
 
@@ -40,17 +68,70 @@
         </div>
         <div class="cart-summary">
           <p><strong>Tổng cộng:</strong> <span id="cart-total">0 VND</span></p>
-          <button id="place-order-button" class="btn btn-success" disabled>
-            Đặt hàng
+          <button id="checkout-button" class="btn btn-success" disabled>
+            Tiến hành Đặt hàng
           </button>
         </div>
       </section>
+
       <hr />
 
-      <div id="contact" class="store-info"></div>
+      <div id="contact" class="store-info">
+        <h2>Ghé thăm chúng tôi</h2>
+        <p>
+          <i class="fa-solid fa-location-dot"></i> <strong>Địa chỉ:</strong> 123
+          Đường ABC, Quận XYZ, Hải Phòng
+        </p>
+        <p>
+          <i class="fa-solid fa-clock"></i> <strong>Giờ mở cửa:</strong> 7:00 AM
+          - 10:00 PM (Hàng ngày)
+        </p>
+        <p>
+          <i class="fa-solid fa-phone"></i> <strong>Liên hệ:</strong> 0123 456
+          789
+        </p>
+      </div>
     </div>
 
-    <footer class="footer"></footer>
+    <footer class="footer">
+      <div class="container">
+        <p>&copy; 2025 Tên Quán Cafe. All Rights Reserved.</p>
+      </div>
+    </footer>
+
+    <div id="checkout-modal" class="modal-overlay" style="display: none">
+      <div class="modal-content">
+        <button id="close-modal-button" class="close-modal-button">
+          &times;
+        </button>
+        <h2>Thông tin Đặt hàng</h2>
+        <form id="checkout-form" class="checkout-form">
+          <div class="form-group">
+            <label for="customer-name">Họ và tên *</label>
+            <input type="text" id="customer-name" required />
+          </div>
+          <div class="form-group">
+            <label for="customer-phone">Số điện thoại *</label>
+            <input type="tel" id="customer-phone" required />
+          </div>
+          <div class="form-group">
+            <label for="customer-address"
+              >Địa chỉ (Giao hàng) / Ghi chú (Lấy tại quầy)</label
+            >
+            <input type="text" id="customer-address" />
+          </div>
+          <div class="form-group">
+            <p>
+              <strong>Tổng thanh toán:</strong>
+              <span id="modal-total">0 VND</span>
+            </p>
+          </div>
+          <button type="submit" id="place-order-button" class="btn btn-success">
+            Xác Nhận Đặt Hàng
+          </button>
+        </form>
+      </div>
+    </div>
 
     <script src="script.js"></script>
   </body>

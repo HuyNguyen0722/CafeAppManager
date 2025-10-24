@@ -1,65 +1,93 @@
 [
-    {
-        "id": "cf-001",
-        "name": "Cà phê Đen",
-        "price": 25000,
-        "image": "data/images/cf_den.jpg",
-        "category": "Cà phê"
-    },
-    {
-        "id": "cf-002",
-        "name": "Cà phê Sữa",
-        "price": 30000,
-        "image": "data/images/cf_sua.jpg",
-        "category": "Cà phê"
-    },
-    {
-        "id": "cf-003",
-        "name": "Bạc Xỉu",
-        "price": 35000,
-        "image": "data/images/bac_xiu.jpg",
-        "category": "Cà phê"
-    },
-    {
-        "id": "ts-001",
-        "name": "Trà sữa Truyền thống",
-        "price": 40000,
-        "image": "data/images/ts_truyenthong.jpg",
-        "category": "Trà Sữa"
-    },
-    {
-        "id": "ts-002",
-        "name": "Trà sữa Trân châu Đường đen",
-        "price": 45000,
-        "image": "data/images/ts_duongden.jpg",
-        "category": "Trà Sữa"
-    },
-    {
-        "id": "ne-001",
-        "name": "Nước ép Cam",
-        "price": 35000,
-        "image": "data/images/nuoc_ep_cam.jpg",
-        "category": "Nước ép"
-    },
-    {
-        "id": "ne-002",
-        "name": "Nước ép Dứa",
-        "price": 35000,
-        "image": "data/images/nuoc_ep_dua.jpg",
-        "category": "Nước ép"
-    },
-    {
-        "id": "b-001",
-        "name": "Bánh Tiramisu",
-        "price": 50000,
-        "image": "data/images/banh_tiramisu.jpg",
-        "category": "Bánh ngọt"
-    },
-    {
-        "id": "07e2d304-45e6-46da-b0f6-288551a663f5",
-        "name": "Cà phê muối",
-        "price": 40000.0,
-        "category": "Cà phê",
-        "image": ""
-    }
+  {
+    "id": "cf-001",
+    "name": "Cà phê Đen",
+    "price": 25000,
+    "image": "data/images/cf_den.jpg",
+    "category": "Cà phê"
+  },
+  {
+    "id": "cf-002",
+    "name": "Cà phê Sữa",
+    "price": 30000,
+    "image": "data/images/cf_sua.jpg",
+    "category": "Cà phê"
+  },
+  {
+    "id": "cf-003",
+    "name": "Bạc Xỉu",
+    "price": 35000,
+    "image": "data/images/bac_xiu.jpg",
+    "category": "Cà phê"
+  },
+  {
+    "id": "07e2d304-45e6-46da-b0f6-288551a663f5",
+    "name": "Cà phê muối",
+    "price": 40000.0,
+    "category": "Cà phê",
+    "image": "data/images/cf_muoi.jpg"
+  },
+  {
+    "id": "ts-001",
+    "name": "Trà sữa Truyền thống",
+    "price": 40000,
+    "image": "data/images/ts_truyenthong.jpg",
+    "category": "Trà Sữa"
+  },
+  {
+    "id": "ts-002",
+    "name": "Trà sữa Trân châu Đường đen",
+    "price": 45000,
+    "image": "data/images/ts_duongden.jpg",
+    "category": "Trà Sữa"
+  },
+  {
+    "id": "ne-001",
+    "name": "Nước ép Cam",
+    "price": 35000,
+    "image": "data/images/nuoc_ep_cam.jpg",
+    "category": "Nước ép"
+  },
+  {
+    "id": "ne-002",
+    "name": "Nước ép Dứa",
+    "price": 35000,
+    "image": "data/images/nuoc_ep_dua.jpg",
+    "category": "Nước ép"
+  },
+  {
+    "id": "b-001",
+    "name": "Bánh Tiramisu",
+    "price": 50000,
+    "image": "data/images/banh_tiramisu.jpg",
+    "category": "Bánh ngọt"
+  },
+  {
+    "id": "b-002",
+    "name": "Bánh Croissant Bơ",
+    "price": 25000.0,
+    "category": "Bánh ngọt",
+    "image": "data/images/banh_croissant.jpg"
+  },
+  {
+    "id": "food-001",
+    "name": "Khoai tây chiên",
+    "price": 35000.0,
+    "category": "Ăn vặt",
+    "image": "data/images/khoai_tay_chien.jpg"
+  },
+  {
+    "id": "food-002",
+    "name": "Xúc xích chiên",
+    "price": 40000.0,
+    "category": "Ăn vặt",
+    "image": "data/images/xuc_xich_chien.jpg"
+  },
+  {
+    "id": "food-003",
+    "name": "Phô mai que",
+    "price": 45000.0,
+    "category": "Ăn vặt",
+    "image": "data/images/phomai_que.jpg"
+  }
 ]

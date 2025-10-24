@@ -35,13 +35,15 @@ def _load_json(file_path, default_data=None):
     if not os.path.exists(file_path):
         if default_data is not None:
             _save_json(file_path, default_data)
-        return default_data if default_data is not None else []
+        # Trả về bản sao để tránh thay đổi default_data gốc
+        return default_data.copy() if default_data is not None else []
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             return json.load(f)
-    except (json.JSONDecodeError, FileNotFoundError):
-        print(f"Cảnh báo: Lỗi đọc file {file_path}. Sử dụng dữ liệu mặc định.")
-        return default_data if default_data is not None else []
+    except (json.JSONDecodeError, FileNotFoundError) as e:
+        print(f"Cảnh báo: Lỗi đọc file {file_path}: {e}. Sử dụng dữ liệu mặc định.")
+        # Trả về bản sao
+        return default_data.copy() if default_data is not None else []
 
 
 def _save_json(file_path, data):
@@ -66,22 +68,21 @@ def copy_image_to_data(source_path):
     _ensure_dir()
     try:
         _, ext = os.path.splitext(source_path)
-        filename = f"{uuid.uuid4()}{ext}"
+        if ext and not ext.startswith("."):
+            ext = "." + ext
+        filename = f"{uuid.uuid4()}{ext if ext else '.jpg'}"
         destination = os.path.join(IMAGES_DIR, filename)
         shutil.copy(source_path, destination)
-        # Trả về đường dẫn tương đối từ thư mục App
         return os.path.join("data", "images", filename)
     except Exception as e:
-        print(f"Lỗi khi sao chép ảnh: {e}")
+        print(f"Lỗi khi sao chép ảnh từ {source_path}: {e}")
         return ""
 
 
 # --- User Management ---
 def get_users():
     """Lấy danh sách người dùng, tạo mặc định nếu file không tồn tại."""
-    # Giả định lương Staff 7.5tr/tháng / (8 giờ/ngày * 26 ngày/tháng)
     staff_hourly_rate = 7500000 / (8 * 26)
-
     default_users = [
         {
             "username": "admin",
@@ -110,9 +111,10 @@ def get_users():
 def add_user(user_data):
     """Thêm người dùng mới."""
     users = get_users()
-    # Kiểm tra trùng username trước khi thêm (tùy chọn)
-    if any(u["username"] == user_data["username"] for u in users):
-        raise ValueError(f"Tên đăng nhập '{user_data['username']}' đã tồn tại.")
+    if any(u.get("username") == user_data.get("username") for u in users):
+        raise ValueError(f"Tên đăng nhập '{user_data.get('username')}' đã tồn tại.")
+    user_data.setdefault("role", "staff")
+    user_data.setdefault("hourly_rate", 0.0)
     users.append(user_data)
     _save_json(USERS_FILE, users)
 
@@ -121,9 +123,9 @@ def update_user(username, new_data):
     """Cập nhật thông tin người dùng."""
     users = get_users()
     user_found = False
-    for user in users:
-        if user["username"] == username:
-            user.update(new_data)
+    for i, user in enumerate(users):
+        if user.get("username") == username:
+            users[i].update(new_data)
             user_found = True
             break
     if user_found:
@@ -136,7 +138,7 @@ def delete_user(username):
     """Xóa người dùng."""
     users = get_users()
     original_length = len(users)
-    users = [u for u in users if u["username"] != username]
+    users = [u for u in users if u.get("username") != username]
     if len(users) < original_length:
         _save_json(USERS_FILE, users)
     else:
@@ -152,9 +154,7 @@ def get_menu():
 def add_menu_item(item_data):
     """Thêm món mới."""
     menu = get_menu()
-    # Đảm bảo có ID
-    if "id" not in item_data or not item_data["id"]:
-        item_data["id"] = str(uuid.uuid4())
+    item_data.setdefault("id", str(uuid.uuid4()))
     menu.append(item_data)
     _save_json(MENU_FILE, menu)
 
@@ -163,9 +163,9 @@ def update_menu_item(item_id, new_data):
     """Cập nhật thông tin món ăn."""
     menu = get_menu()
     item_found = False
-    for item in menu:
+    for i, item in enumerate(menu):
         if item.get("id") == item_id:
-            item.update(new_data)
+            menu[i].update(new_data)
             item_found = True
             break
     if item_found:
@@ -200,12 +200,28 @@ def migrate_menu_to_include_ids():
 
 # --- Table Management ---
 def get_tables():
-    """Lấy trạng thái các bàn."""
-    default_tables = [
+    """Lấy trạng thái các bàn, đảm bảo có mục 'takeaway'."""
+    default_tables_base = [
         {"id": i, "status": "Trống", "order": {}, "employee": None}
         for i in range(1, 16)
     ]
-    return _load_json(TABLES_FILE, default_tables)
+    takeaway_default = {
+        "id": "takeaway",
+        "name": "Mang về",
+        "status": "Sẵn sàng",
+        "order": {},
+        "employee": None,
+    }
+    default_data_with_takeaway = default_tables_base + [takeaway_default]
+
+    tables_data = _load_json(TABLES_FILE, default_data_with_takeaway)
+
+    has_takeaway = any(table.get("id") == "takeaway" for table in tables_data)
+    if not has_takeaway:
+        tables_data.append(takeaway_default.copy())  # Thêm bản sao
+        _save_json(TABLES_FILE, tables_data)  # Lưu lại ngay để đảm bảo
+        print("Đã tự động thêm mục 'takeaway' vào dữ liệu bàn.")
+    return tables_data
 
 
 def save_tables(tables_data):
@@ -222,6 +238,7 @@ def get_receipts():
 def save_receipt(receipt_data):
     """Lưu một hóa đơn mới."""
     receipts = get_receipts()
+    receipt_data.setdefault("id", str(uuid.uuid4()))  # Đảm bảo có ID
     receipts.append(receipt_data)
     _save_json(RECEIPTS_FILE, receipts)
 
@@ -235,10 +252,9 @@ def get_attendance_records():
 def get_last_attendance(username):
     """Lấy bản ghi chấm công gần nhất của user."""
     records = get_attendance_records()
-    user_records = [r for r in records if r["username"] == username]
+    user_records = [r for r in records if r.get("username") == username]
     if not user_records:
         return None
-    # Sắp xếp theo check_in_time giảm dần và lấy cái đầu tiên
     user_records.sort(key=lambda x: x.get("check_in_time", ""), reverse=True)
     return user_records[0]
 
@@ -247,11 +263,13 @@ def record_check_in(username):
     """Ghi nhận giờ check-in."""
     now = datetime.datetime.now()
     today_str = now.strftime("%Y-%m-%d")
-
     last_record = get_last_attendance(username)
-    if last_record and last_record.get("check_in_time", "").startswith(today_str):
-        if not last_record.get("check_out_time"):
-            raise ValueError("Bạn đã check-in hôm nay rồi nhưng chưa check-out.")
+    if (
+        last_record
+        and last_record.get("check_in_time", "").startswith(today_str)
+        and not last_record.get("check_out_time")
+    ):
+        raise ValueError("Bạn đã check-in hôm nay rồi nhưng chưa check-out.")
 
     new_record = {
         "id": str(uuid.uuid4()),
@@ -259,7 +277,6 @@ def record_check_in(username):
         "check_in_time": now.isoformat(),
         "check_out_time": None,
     }
-
     records = get_attendance_records()
     records.append(new_record)
     _save_json(ATTENDANCE_FILE, records)
@@ -270,7 +287,6 @@ def record_check_out(username):
     """Ghi nhận giờ check-out."""
     now = datetime.datetime.now()
     today_str = now.strftime("%Y-%m-%d")
-
     last_record = get_last_attendance(username)
 
     if not last_record:
@@ -282,23 +298,22 @@ def record_check_out(username):
 
     records = get_attendance_records()
     record_updated = None
-    for i in range(len(records) - 1, -1, -1):  # Duyệt ngược
-        if records[i]["id"] == last_record["id"]:
+    for i in range(len(records) - 1, -1, -1):
+        if records[i].get("id") == last_record.get("id"):
             records[i]["check_out_time"] = now.isoformat()
-            record_updated = records[i]  # Lưu lại bản ghi đã cập nhật
+            record_updated = records[i]
             break
-
     if not record_updated:
         raise ValueError("Không tìm thấy bản ghi check-in phù hợp để cập nhật.")
 
     _save_json(ATTENDANCE_FILE, records)
-    return record_updated  # Trả về bản ghi đã được cập nhật
+    return record_updated
 
 
 # --- Salary Calculation ---
 def calculate_salary(username, start_date, end_date):
     """Tính tổng giờ làm và lương cho user trong khoảng thời gian."""
-    user_data = next((u for u in get_users() if u["username"] == username), None)
+    user_data = next((u for u in get_users() if u.get("username") == username), None)
     if not user_data:
         raise ValueError(f"Không tìm thấy người dùng: {username}")
 
@@ -310,25 +325,27 @@ def calculate_salary(username, start_date, end_date):
     total_duration = datetime.timedelta()
 
     for record in all_records:
-        if record["username"] == username:
+        if record.get("username") == username:
             try:
                 check_in_str = record.get("check_in_time")
                 check_out_str = record.get("check_out_time")
-
                 if not check_in_str or not check_out_str:
-                    continue  # Bỏ qua nếu thiếu giờ vào/ra
+                    continue
 
                 check_in_time = datetime.datetime.fromisoformat(check_in_str)
                 check_out_time = datetime.datetime.fromisoformat(check_out_str)
                 record_date = check_in_time.date()
 
-                # Chỉ tính các bản ghi trong khoảng thời gian
                 if (
                     start_date <= record_date <= end_date
                     and check_out_time > check_in_time
                 ):
                     duration = check_out_time - check_in_time
                     total_duration += duration
+            except ValueError as ve:
+                print(
+                    f"Lỗi định dạng thời gian trong bản ghi {record.get('id', 'N/A')}: {ve}"
+                )
             except Exception as e:
                 print(f"Bỏ qua bản ghi chấm công lỗi: {record.get('id', 'N/A')} - {e}")
 

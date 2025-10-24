@@ -1,3 +1,4 @@
+import traceback
 from PyQt6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -11,11 +12,11 @@ from PyQt6.QtWidgets import (
     QMessageBox,
     QDateEdit,
     QCalendarWidget,
+    QFormLayout,
     QScrollArea,
     QDialog,
     QDialogButtonBox,
     QComboBox,
-    QFormLayout,
     QSizePolicy,
 )
 from PyQt6.QtGui import QPixmap
@@ -26,7 +27,7 @@ from decimal import Decimal
 
 import matplotlib
 
-matplotlib.use("Qt5Agg")
+matplotlib.use("QtAgg")  # Hoặc Qt6Agg
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
@@ -56,19 +57,19 @@ class MplCanvas(FigureCanvas):
         self.setParent(parent)
 
     def update_plot(self, dates, sales):
-        self.axes.cla()
+        self.axes.cla()  # Xóa biểu đồ cũ
         if dates and sales:
             self.axes.bar(dates, sales, color="#007bff")
             self.axes.set_title("Doanh thu theo ngày")
             self.axes.set_ylabel("Tổng doanh thu (VND)")
-            self.axes.figure.autofmt_xdate()
+            self.axes.figure.autofmt_xdate()  # Tự xoay ngày cho đẹp
         else:
             self.axes.text(
                 0.5,
                 0.5,
                 "Không có dữ liệu",
-                ha="center",
-                va="center",
+                horizontalalignment="center",
+                verticalalignment="center",
                 transform=self.axes.transAxes,
             )
         self.draw()
@@ -230,10 +231,10 @@ class AdminPanel(QWidget):
         )  # Salary
         self.users_table.verticalHeader().setSectionResizeMode(
             QHeaderView.ResizeMode.Stretch
-        )
+        )  # Stretch Rows
         self.users_table.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
-        )
+        )  # Allow vertical expand
         self.users_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.users_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.users_table.setAlternatingRowColors(True)
@@ -277,7 +278,9 @@ class AdminPanel(QWidget):
                     self.load_users_data()
                     self.update_salary_filters()  # Cập nhật filter lương
                 except ValueError as e:
-                    QMessageBox.warning(self, "Lỗi", str(e))
+                    QMessageBox.warning(
+                        self, "Lỗi", str(e)
+                    )  # Hiển thị lỗi trùng username
                 except Exception as e:
                     QMessageBox.critical(self, "Lỗi", f"Lỗi không xác định: {e}")
 
@@ -289,19 +292,26 @@ class AdminPanel(QWidget):
             )
             return
         selected_row = selected_rows[0].row()
-        username = self.users_table.item(selected_row, 0).text()
-        user_data = next((u for u in get_users() if u["username"] == username), None)
+        username_item = self.users_table.item(selected_row, 0)
+        if not username_item:
+            return  # Should not happen, but safety check
+        username = username_item.text()
+        user_data = next(
+            (u for u in get_users() if u.get("username") == username), None
+        )
+
         if user_data:
             dialog = UserDialog(user_data, parent=self)
             if dialog.exec():
                 new_data = dialog.get_data()
                 if new_data:
-                    if "password" not in new_data:
-                        new_data["password"] = user_data.get("password")
+                    # Giữ mật khẩu cũ nếu người dùng không nhập mới
+                    if "password" not in new_data or not new_data["password"]:
+                        new_data["password"] = user_data.get("password")  # Lấy pass cũ
                     try:
                         update_user(username, new_data)
                         self.load_users_data()
-                        self.update_salary_filters()
+                        self.update_salary_filters()  # Cập nhật filter lương
                     except Exception as e:
                         QMessageBox.critical(self, "Lỗi", f"Lỗi cập nhật user: {e}")
 
@@ -313,20 +323,24 @@ class AdminPanel(QWidget):
             )
             return
         selected_row = selected_rows[0].row()
-        username = self.users_table.item(selected_row, 0).text()
+        username_item = self.users_table.item(selected_row, 0)
+        if not username_item:
+            return
+        username = username_item.text()
+
+        # Lấy username người đang đăng nhập từ MainWindow (parent)
         current_user_username = ""
-        parent_widget = self
-        while parent_widget:
-            if hasattr(parent_widget, "user_data"):
-                current_user_username = parent_widget.user_data.get("username")
-                break
-            parent_widget = parent_widget.parent()
+        parent_widget = self.parent()  # Should be MainWindow if nested correctly
+        if hasattr(parent_widget, "user_data"):
+            current_user_username = parent_widget.user_data.get("username")
+
         if username == current_user_username:
             QMessageBox.warning(self, "Lỗi", "Bạn không thể xóa chính mình.")
             return
         if username == "admin":
             QMessageBox.critical(self, "Lỗi", "Không thể xóa tài khoản 'admin' gốc.")
             return
+
         reply = QMessageBox.question(
             self,
             "Xác nhận",
@@ -337,7 +351,7 @@ class AdminPanel(QWidget):
             try:
                 delete_user(username)
                 self.load_users_data()
-                self.update_salary_filters()
+                self.update_salary_filters()  # Cập nhật filter lương
             except Exception as e:
                 QMessageBox.critical(self, "Lỗi", f"Lỗi xóa user: {e}")
 
@@ -411,9 +425,9 @@ class AdminPanel(QWidget):
         dialog = MenuItemDialog(parent=self)
         if dialog.exec():
             data = dialog.get_data()
-        if data:
-            add_menu_item(data)
-            self.load_menu_data()
+            if data:
+                add_menu_item(data)
+                self.load_menu_data()
 
     def edit_selected_menu_item(self):
         selected_rows = self.menu_table.selectionModel().selectedRows()
@@ -421,16 +435,18 @@ class AdminPanel(QWidget):
             QMessageBox.warning(self, "Chưa chọn", "Vui lòng chọn một món để sửa.")
             return
         selected_row = selected_rows[0].row()
-        item_id = self.menu_table.item(selected_row, 0).text()
-        menu = get_menu()
-        item_data = next((i for i in menu if i.get("id") == item_id), None)
+        item_id_item = self.menu_table.item(selected_row, 0)
+        if not item_id_item:
+            return
+        item_id = item_id_item.text()
+        item_data = next((i for i in get_menu() if i.get("id") == item_id), None)
         if item_data:
             dialog = MenuItemDialog(item_data, parent=self)
             if dialog.exec():
                 data = dialog.get_data()
-            if data:
-                update_menu_item(item_id, data)
-                self.load_menu_data()
+                if data:
+                    update_menu_item(item_id, data)
+                    self.load_menu_data()
 
     def delete_selected_menu_item(self):
         selected_rows = self.menu_table.selectionModel().selectedRows()
@@ -438,8 +454,12 @@ class AdminPanel(QWidget):
             QMessageBox.warning(self, "Chưa chọn", "Vui lòng chọn một món để xóa.")
             return
         selected_row = selected_rows[0].row()
-        item_id = self.menu_table.item(selected_row, 0).text()
-        item_name = self.menu_table.item(selected_row, 1).text()
+        item_id_item = self.menu_table.item(selected_row, 0)
+        item_name_item = self.menu_table.item(selected_row, 1)
+        if not item_id_item or not item_name_item:
+            return
+        item_id = item_id_item.text()
+        item_name = item_name_item.text()
         reply = QMessageBox.question(
             self,
             "Xác nhận",
@@ -458,24 +478,55 @@ class AdminPanel(QWidget):
             self.image_preview_label.setText("Chọn một món để xem ảnh")
             self.image_preview_label.clear()
             return
+
         selected_row = selected_rows[0].row()
         image_path_item = self.menu_table.item(selected_row, 3)
+
         if not image_path_item or not image_path_item.text():
             self.image_preview_label.setText("Món này không có ảnh")
             self.image_preview_label.clear()
             return
+
         image_path = image_path_item.text()
-        full_image_path = os.path.join(PROJECT_ROOT, image_path)
-        if os.path.exists(full_image_path):
-            pixmap = QPixmap(full_image_path)
-            self.image_preview_label.setPixmap(
-                pixmap.scaled(
-                    self.image_preview_label.size(),
-                    Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation,
-                )
-            )
+        # PROJECT_ROOT trỏ vào thư mục App
+        full_image_path = os.path.join(PROJECT_ROOT, image_path) if image_path else ""
+
+        # --- THÊM DEBUG ---
+        print(f"Debug AdminPreview: Trying path: '{full_image_path}'")
+        image_exists = False
+        if full_image_path:
+            image_exists = os.path.exists(full_image_path)
+        print(f"Debug AdminPreview: Path exists? {image_exists}")
+        # --- HẾT DEBUG ---
+
+        if full_image_path and image_exists:  # Dùng biến đã kiểm tra
+            try:  # Thêm try-except
+                pixmap = QPixmap(full_image_path)
+                if pixmap.isNull():
+                    print(
+                        f"LỖI AdminPreview: QPixmap bị null cho file: {full_image_path}"
+                    )
+                    self.image_preview_label.setText(f"Ảnh bị lỗi:\n{image_path}")
+                    self.image_preview_label.clear()
+                else:
+                    print(f"Debug AdminPreview: Tải ảnh thành công.")
+                    self.image_preview_label.setPixmap(
+                        pixmap.scaled(
+                            self.image_preview_label.size(),
+                            Qt.AspectRatioMode.KeepAspectRatio,
+                            Qt.TransformationMode.SmoothTransformation,
+                        )
+                    )
+            except Exception as e:
+                print(f"LỖI AdminPreview: Exception khi tải QPixmap: {e}")
+                traceback.print_exc()
+                self.image_preview_label.setText(f"Ảnh bị lỗi:\n{image_path}")
+                self.image_preview_label.clear()
         else:
+            if full_image_path:
+                print(
+                    f"CẢNH BÁO AdminPreview: File ảnh không tồn tại: {full_image_path}"
+                )
             self.image_preview_label.setText(f"Không tìm thấy ảnh:\n{image_path}")
             self.image_preview_label.clear()
 
@@ -483,6 +534,7 @@ class AdminPanel(QWidget):
     def init_stats_tab(self):
         layout = QVBoxLayout(self.stats_tab)
         layout.setContentsMargins(10, 15, 10, 10)
+        # Filters
         filter_layout = QHBoxLayout()
         filter_layout.addWidget(QLabel("Từ ngày:"))
         self.start_date_input = QDateEdit()
@@ -500,6 +552,7 @@ class AdminPanel(QWidget):
         filter_layout.addWidget(self.load_stats_button)
         filter_layout.addStretch()
         layout.addLayout(filter_layout)
+        # Summary
         summary_layout = QHBoxLayout()
         summary_layout.setContentsMargins(0, 10, 0, 10)
         self.total_revenue_label = QLabel("Tổng doanh thu: 0 VND")
@@ -507,6 +560,7 @@ class AdminPanel(QWidget):
         summary_layout.addWidget(self.total_revenue_label)
         summary_layout.addStretch()
         layout.addLayout(summary_layout)
+        # Content (Chart + Table)
         content_layout = QHBoxLayout()
         self.stats_canvas = MplCanvas(self, width=5, height=4, dpi=100)
         content_layout.addWidget(self.stats_canvas, 2)
@@ -543,23 +597,32 @@ class AdminPanel(QWidget):
         start_date = self.start_date_input.date().toPyDate()
         end_date = self.end_date_input.date().toPyDate()
         all_receipts = get_receipts()
+
         self.filtered_receipts_cache = []
         sales_by_date = {}
         total_revenue = Decimal("0.0")
+
         self.receipts_table.setRowCount(0)
+
         for receipt in all_receipts:
+            # TRY phải thẳng hàng với FOR
             try:
+                # Code bên trong TRY thụt vào 1 mức
                 timestamp_str = receipt.get("timestamp")
                 receipt_total = Decimal(str(receipt.get("total", 0.0)))
                 receipt_employee = receipt.get("employee", "N/A")
                 receipt_id_short = receipt.get("id", "N/A")[:8] + "..."
+
                 if not timestamp_str:
                     continue
+
                 receipt_dt = datetime.datetime.fromisoformat(timestamp_str)
                 receipt_date = receipt_dt.date()
+
                 if start_date <= receipt_date <= end_date:
                     self.filtered_receipts_cache.append(receipt)
                     total_revenue += receipt_total
+
                     row = self.receipts_table.rowCount()
                     self.receipts_table.insertRow(row)
                     self.receipts_table.setItem(
@@ -574,12 +637,16 @@ class AdminPanel(QWidget):
                     self.receipts_table.setItem(
                         row, 3, QTableWidgetItem(f"{receipt_total:,.0f} VND")
                     )
+
                     date_str = receipt_date.strftime("%Y-%m-%d")
                     sales_by_date[date_str] = (
                         sales_by_date.get(date_str, Decimal("0.0")) + receipt_total
                     )
+
+            # EXCEPT phải thẳng hàng với TRY
             except Exception as e:
                 print(f"Lỗi xử lý hóa đơn ID {receipt.get('id','N/A')}: {e}")
+
         self.total_revenue_label.setText(f"Tổng doanh thu: {total_revenue:,.0f} VND")
         sorted_dates = sorted(sales_by_date.keys())
         sorted_sales = [float(sales_by_date[date]) for date in sorted_dates]
@@ -588,20 +655,22 @@ class AdminPanel(QWidget):
     def show_receipt_detail(self, item):
         selected_row = item.row()
         try:
-            receipt_data = self.filtered_receipts_cache[selected_row]
-            dialog = ReceiptDetailDialog(receipt_data, self)
-            dialog.exec()
-        except IndexError:
-            QMessageBox.warning(
-                self, "Lỗi", "Không thể lấy chi tiết hóa đơn. Vui lòng tải lại dữ liệu."
-            )
+            if 0 <= selected_row < len(self.filtered_receipts_cache):
+                receipt_data = self.filtered_receipts_cache[selected_row]
+                dialog = ReceiptDetailDialog(receipt_data, self)
+                dialog.exec()
+            else:
+                QMessageBox.warning(self, "Lỗi", "Chỉ số hàng không hợp lệ.")
         except Exception as e:
-            QMessageBox.critical(self, "Lỗi", f"Lỗi không xác định: {e}")
+            QMessageBox.critical(
+                self, "Lỗi", f"Lỗi không xác định khi xem chi tiết: {e}"
+            )
 
     # --- Tab Quản lý Chấm công ---
     def init_attendance_tab(self):
         layout = QVBoxLayout(self.attendance_tab)
         layout.setContentsMargins(10, 15, 10, 10)
+        # Filters
         filter_layout = QHBoxLayout()
         filter_layout.addWidget(QLabel("Từ ngày:"))
         self.att_start_date_input = QDateEdit()
@@ -623,6 +692,7 @@ class AdminPanel(QWidget):
         filter_layout.addWidget(self.load_att_button)
         filter_layout.addStretch()
         layout.addLayout(filter_layout)
+        # Table
         self.attendance_table = QTableWidget()
         self.attendance_table.setColumnCount(4)
         self.attendance_table.setHorizontalHeaderLabels(
@@ -646,37 +716,55 @@ class AdminPanel(QWidget):
         self.load_attendance_data()
 
     def load_attendance_data(self):
+        # Cập nhật filter user
         if hasattr(self, "att_user_filter"):
             current_selection = self.att_user_filter.currentText()
+            self.att_user_filter.blockSignals(
+                True
+            )  # Tạm khóa signal để tránh trigger lại load_attendance_data
             self.att_user_filter.clear()
             self.att_user_filter.addItem("Tất cả")
             users = get_users()
-            usernames = sorted([u["username"] for u in users])
+            usernames = sorted(
+                [u.get("username", "N/A") for u in users]
+            )  # Lấy username an toàn
             self.att_user_filter.addItems(usernames)
             index = self.att_user_filter.findText(current_selection)
-        if index != -1:
-            self.att_user_filter.setCurrentIndex(index)
+            if index != -1:
+                self.att_user_filter.setCurrentIndex(index)
+            self.att_user_filter.blockSignals(False)  # Mở lại signal
+
+        # Lấy giá trị filter
         start_date = self.att_start_date_input.date().toPyDate()
         end_date = self.att_end_date_input.date().toPyDate()
         selected_user = self.att_user_filter.currentText()
+
         all_records = get_attendance_records()
         self.attendance_table.setRowCount(0)
         all_records.sort(key=lambda x: x.get("check_in_time", ""), reverse=True)
+
         for record in all_records:
+            # TRY phải thẳng hàng với FOR
             try:
+                # Code bên trong TRY thụt vào 1 mức
                 check_in_str = record.get("check_in_time")
                 check_out_str = record.get("check_out_time")
                 record_user = record.get("username", "N/A")
+
                 if not check_in_str:
                     continue
+
                 check_in_dt = datetime.datetime.fromisoformat(check_in_str)
                 record_date = check_in_dt.date()
+
                 if not (start_date <= record_date <= end_date):
                     continue
                 if selected_user != "Tất cả" and record_user != selected_user:
                     continue
+
                 row = self.attendance_table.rowCount()
                 self.attendance_table.insertRow(row)
+
                 check_in_time_str = check_in_dt.strftime("%H:%M:%S")
                 check_out_time_str = "Chưa Check-out"
                 if check_out_str:
@@ -685,6 +773,7 @@ class AdminPanel(QWidget):
                         check_out_time_str = check_out_dt.strftime("%H:%M:%S")
                     except ValueError:
                         check_out_time_str = "Lỗi Giờ Ra"
+
                 self.attendance_table.setItem(row, 0, QTableWidgetItem(record_user))
                 self.attendance_table.setItem(
                     row, 1, QTableWidgetItem(record_date.strftime("%Y-%m-%d"))
@@ -695,6 +784,8 @@ class AdminPanel(QWidget):
                 self.attendance_table.setItem(
                     row, 3, QTableWidgetItem(check_out_time_str)
                 )
+
+            # EXCEPT phải thẳng hàng với TRY
             except ValueError as ve:
                 print(
                     f"Lỗi định dạng thời gian trong bản ghi {record.get('id','N/A')}: {ve}"
@@ -706,6 +797,7 @@ class AdminPanel(QWidget):
     def init_salary_tab(self):
         layout = QVBoxLayout(self.salary_tab)
         layout.setContentsMargins(10, 15, 10, 10)
+        # Filters
         filter_layout = QHBoxLayout()
         filter_layout.addWidget(QLabel("Từ ngày:"))
         self.salary_start_date_input = QDateEdit()
@@ -728,6 +820,7 @@ class AdminPanel(QWidget):
         filter_layout.addWidget(self.calculate_salary_button)
         filter_layout.addStretch()
         layout.addLayout(filter_layout)
+        # Table
         self.salary_table = QTableWidget()
         self.salary_table.setColumnCount(5)
         self.salary_table.setHorizontalHeaderLabels(
@@ -758,26 +851,33 @@ class AdminPanel(QWidget):
         users_to_calculate = []
         if selected_user == "Tất cả":
             users_to_calculate = [
-                u["username"] for u in get_users() if u.get("role") != "admin"
-            ]
-        else:
-            users_to_calculate.append(selected_user)
+                u.get("username")
+                for u in get_users()
+                if u.get("role") != "admin" and u.get("username")
+            ]  # Lọc admin và None
+        elif selected_user:
+            users_to_calculate.append(selected_user)  # Chỉ tính nếu user được chọn
+
         for username in users_to_calculate:
             try:
                 salary_data = calculate_salary(username, start_date, end_date)
                 row = self.salary_table.rowCount()
                 self.salary_table.insertRow(row)
                 period_str = f"{start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')}"
-                total_hours_str = f"{salary_data['total_hours']:.2f}"
-                hourly_rate_str = f"{salary_data['hourly_rate']:,.0f}"
-                total_salary_str = f"{salary_data['total_salary']:,.0f}"
+                total_hours_str = f"{salary_data.get('total_hours', 0.0):.2f}"
+                hourly_rate_str = f"{salary_data.get('hourly_rate', 0.0):,.0f}"
+                total_salary_str = f"{salary_data.get('total_salary', Decimal('0.0')):,.0f}"  # Lấy an toàn
+
                 self.salary_table.setItem(row, 0, QTableWidgetItem(username))
                 self.salary_table.setItem(row, 1, QTableWidgetItem(period_str))
                 self.salary_table.setItem(row, 2, QTableWidgetItem(total_hours_str))
                 self.salary_table.setItem(row, 3, QTableWidgetItem(hourly_rate_str))
                 self.salary_table.setItem(row, 4, QTableWidgetItem(total_salary_str))
+
             except ValueError as e:
-                print(f"Lỗi khi tính lương cho {username}: {e}")
+                print(
+                    f"Lỗi khi tính lương cho {username}: {e}"
+                )  # Lỗi logic (vd: user k tồn tại)
             except Exception as e:
                 print(f"Lỗi không xác định khi tính lương cho {username}: {e}")
                 QMessageBox.warning(
@@ -789,16 +889,19 @@ class AdminPanel(QWidget):
     def update_salary_filters(self):
         if hasattr(self, "salary_user_filter"):
             current_selection = self.salary_user_filter.currentText()
+            self.salary_user_filter.blockSignals(True)
             self.salary_user_filter.clear()
             self.salary_user_filter.addItem("Tất cả")
-            users = [u for u in get_users() if u.get("role") != "admin"]
+            users = [
+                u for u in get_users() if u.get("role") != "admin" and u.get("username")
+            ]
             usernames = sorted([u["username"] for u in users])
             self.salary_user_filter.addItems(usernames)
             index = self.salary_user_filter.findText(current_selection)
             if index != -1:
                 self.salary_user_filter.setCurrentIndex(index)
+            self.salary_user_filter.blockSignals(False)
 
-    # (apply_stylesheet giữ nguyên)
     def apply_stylesheet(self):
         self.setStyleSheet(
             """

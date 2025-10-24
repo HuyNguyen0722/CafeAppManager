@@ -94,5 +94,57 @@
         "order": {},
         "total": 0,
         "employee": null
+    },
+    {
+        "id": "takeaway",
+        "name": "Mang về",
+        "status": "Chờ xử lý",
+        "order": {
+            "Cà phê muối": {
+                "price": 40000,
+                "quantity": 1
+            }
+        },
+        "employee": "Sơn | 09333333 | 3333333"
+    },
+    {
+        "id": "takeaway",
+        "name": "Mang về",
+        "status": "Chờ xử lý",
+        "order": {
+            "Cà phê muối": {
+                "price": 40000,
+                "quantity": 1
+            }
+        },
+        "employee": "Sơn | 09333333 | 3333333"
+    },
+    {
+        "id": "takeaway3",
+        "name": "Mang về",
+        "status": "Sẵn sàng",
+        "order": {},
+        "employee": null
+    },
+    {
+        "id": "takeaway4",
+        "name": "Mang về",
+        "status": "Sẵn sàng",
+        "order": {},
+        "employee": null
+    },
+    {
+        "id": "takeaway5",
+        "name": "Mang về",
+        "status": "Sẵn sàng",
+        "order": {},
+        "employee": null
+    },
+    {
+        "id": "takeaway",
+        "name": "Mang về",
+        "status": "Sẵn sàng",
+        "order": {},
+        "employee": null
     }
 ]

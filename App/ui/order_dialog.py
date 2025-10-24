@@ -1,7 +1,17 @@
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
-    QPushButton, QFrame, QListWidget, QListWidgetItem,
-    QMessageBox, QSpinBox, QWidget, QGridLayout, QScrollArea
+    QDialog,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QFrame,
+    QListWidget,
+    QListWidgetItem,
+    QMessageBox,
+    QSpinBox,
+    QWidget,
+    QGridLayout,
+    QScrollArea,
 )
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QPixmap, QIcon
@@ -11,23 +21,21 @@ import uuid
 import platform
 import subprocess
 
-from utils.data_manager import (
-    get_menu, PROJECT_ROOT, save_receipt, 
-    RECEIPTS_PRINT_DIR
-)
+from utils.data_manager import get_menu, PROJECT_ROOT, save_receipt, RECEIPTS_PRINT_DIR
 
 try:
     from reportlab.pdfgen import canvas
     from reportlab.lib.pagesizes import mm
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
+
     REPORTLAB_INSTALLED = True
 except ImportError:
     REPORTLAB_INSTALLED = False
     print("CẢNH BÁO: Thư viện 'reportlab' chưa được cài. In PDF sẽ không hoạt động.")
-# -------------------------------------------
 
 
+# --- Widget hiển thị món ăn ---
 class GridMenuItemWidget(QPushButton):
     def __init__(self, item_data, parent=None):
         super().__init__(parent)
@@ -43,20 +51,57 @@ class GridMenuItemWidget(QPushButton):
         image_label.setFixedSize(80, 80)
         image_label.setObjectName("gridItemImage")
         image_path = item_data.get("image", "")
-        
-        # --- SỬA LẠI: Đường dẫn ảnh (image_path là 'data/images/...') ---
-        full_image_path = os.path.join(PROJECT_ROOT, image_path)
-        
-        if image_path and os.path.exists(full_image_path):
-             pixmap = QPixmap(full_image_path)
-             image_label.setPixmap(pixmap.scaled(80, 80, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+        # PROJECT_ROOT trỏ vào thư mục App
+        full_image_path = os.path.join(PROJECT_ROOT, image_path) if image_path else ""
+
+        # --- THÊM DEBUG ---
+        print(
+            f"Debug GridItem ({item_data.get('name', '?')}): Trying path: '{full_image_path}'"
+        )
+        image_exists = False
+        if full_image_path:  # Chỉ kiểm tra nếu đường dẫn không rỗng
+            image_exists = os.path.exists(full_image_path)
+        print(
+            f"Debug GridItem ({item_data.get('name', '?')}): Path exists? {image_exists}"
+        )
+        # --- HẾT DEBUG ---
+
+        if full_image_path and image_exists:  # Dùng biến đã kiểm tra
+            try:  # Thêm try-except để bắt lỗi tải ảnh
+                pixmap = QPixmap(full_image_path)
+                if pixmap.isNull():  # Kiểm tra xem ảnh có tải được không
+                    print(
+                        f"LỖI GridItem ({item_data.get('name', '?')}): QPixmap bị null cho file: {full_image_path}"
+                    )
+                    image_label.setText("Ảnh lỗi")
+                else:
+                    print(
+                        f"Debug GridItem ({item_data.get('name', '?')}): Tải ảnh thành công."
+                    )
+                    image_label.setPixmap(
+                        pixmap.scaled(
+                            80,
+                            80,
+                            Qt.AspectRatioMode.KeepAspectRatio,
+                            Qt.TransformationMode.SmoothTransformation,
+                        )
+                    )
+            except Exception as e:
+                print(
+                    f"LỖI GridItem ({item_data.get('name', '?')}): Exception khi tải QPixmap: {e}"
+                )
+                image_label.setText("Ảnh lỗi")
         else:
-            image_label.setText("🍽️")
-        
+            # Chỉ in nếu đường dẫn không rỗng nhưng file không tồn tại
+            if full_image_path:
+                print(
+                    f"CẢNH BÁO GridItem ({item_data.get('name', '?')}): File ảnh không tồn tại: {full_image_path}"
+                )
+            image_label.setText("🍽️")  # Placeholder
+
         name_label = QLabel(item_data.get("name", "N/A"))
         name_label.setObjectName("gridItemName")
         name_label.setWordWrap(True)
-        
         price_label = QLabel(f"{item_data.get('price', 0):,.0f} VND")
         price_label.setObjectName("gridItemPrice")
 
@@ -65,27 +110,28 @@ class GridMenuItemWidget(QPushButton):
         layout.addWidget(price_label, 0, Qt.AlignmentFlag.AlignCenter)
 
 
+# --- Dialog gọi món ---
 class OrderDialog(QDialog):
-    # (Hàm __init__ và init_ui giữ nguyên)
+    # ... (Các hàm __init__, init_ui, filter_menu_by_category, etc. giữ nguyên như phiên bản cuối) ...
     def __init__(self, table_data, current_user, parent=None):
         super().__init__(parent)
         self.table_data = table_data
         self.current_user = current_user
         self.menu = get_menu()
-        
-        self.setWindowTitle(f"Bàn {self.table_data['id']} - Hóa đơn")
-        self.setMinimumSize(1400, 750) 
-        
+        table_id = self.table_data.get("id")
+        if table_id == "takeaway":
+            self.setWindowTitle("Hóa đơn Mang về / Đặt Online")
+        else:
+            self.setWindowTitle(f"Bàn {table_id if table_id else '?'} - Hóa đơn")
+        self.setMinimumSize(1400, 750)
         self.main_layout = QHBoxLayout(self)
         self.main_layout.setSpacing(10)
         self.main_layout.setContentsMargins(10, 10, 10, 10)
-
         self.init_ui()
-        self.update_order_summary()
+        self.update_order_summary()  # Tải order cũ (nếu có)
         self.apply_stylesheet()
-        
+
     def init_ui(self):
-        # (Giữ nguyên toàn bộ hàm init_ui)
         category_panel = QFrame()
         category_panel.setObjectName("categoryPanel")
         category_panel.setFixedWidth(200)
@@ -94,7 +140,9 @@ class OrderDialog(QDialog):
         category_title.setObjectName("panelTitle")
         self.category_list = QListWidget()
         self.category_list.setObjectName("categoryList")
-        categories = sorted(list(set(item['category'] for item in self.menu if 'category' in item)))
+        categories = sorted(
+            list(set(item.get("category", "Khác") for item in self.menu))
+        )
         self.category_list.addItems(categories)
         self.category_list.itemClicked.connect(self.filter_menu_by_category)
         category_layout.addWidget(category_title)
@@ -105,8 +153,8 @@ class OrderDialog(QDialog):
         menu_title.setObjectName("panelTitle")
         self.menu_items_grid_widget = QWidget()
         self.menu_items_grid = QGridLayout(self.menu_items_grid_widget)
-        self.menu_items_grid.setAlignment(Qt.AlignmentFlag.AlignTop) 
-        self.menu_items_grid.setSpacing(15) 
+        self.menu_items_grid.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.menu_items_grid.setSpacing(15)
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setWidget(self.menu_items_grid_widget)
@@ -147,80 +195,92 @@ class OrderDialog(QDialog):
             self.category_list.setCurrentRow(0)
             self.filter_menu_by_category(self.category_list.item(0))
 
-    # (Các hàm filter_menu_by_category, add_item_to_order, 
-    # update_order_summary, create_order_item_widget, 
-    # change_item_quantity, remove_item_from_order, handle_confirm
-    # giữ nguyên như cũ)
     def filter_menu_by_category(self, category_item):
-        while self.menu_items_grid.count():
-            child = self.menu_items_grid.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
+        item = self.menu_items_grid.takeAt(0)
+        while item is not None:
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+            item = self.menu_items_grid.takeAt(0)
         selected_category = category_item.text()
-        filtered_menu = [item for item in self.menu if item.get('category') == selected_category]
+        filtered_menu = [
+            item
+            for item in self.menu
+            if item.get("category", "Khác") == selected_category
+        ]
         row, col = 0, 0
         for item in filtered_menu:
             if isinstance(item, dict):
                 item_widget = GridMenuItemWidget(item)
-                item_widget.clicked.connect(lambda ch, d=item: self.add_item_to_order(d))
+                item_widget.clicked.connect(
+                    lambda ch, d=item: self.add_item_to_order(d)
+                )
                 self.menu_items_grid.addWidget(item_widget, row, col)
                 col += 1
-                if col >= 3: 
-                    col = 0
-                    row += 1
+            if col >= 3:
+                col = 0
+                row += 1
 
     def add_item_to_order(self, item_data):
-        item_name = item_data['name']
-        if not isinstance(self.table_data.get('order'), dict):
-            self.table_data['order'] = {}
-        order = self.table_data.get('order', {})
+        item_name = item_data.get("name")
+        item_id = item_data.get("id")
+        price = item_data.get("price", 0)
+        if not item_name or not item_id:
+            return
+        if not isinstance(self.table_data.get("order"), dict):
+            self.table_data["order"] = {}
+        order = self.table_data["order"]
         if item_name in order:
-            order[item_name]['quantity'] += 1
+            order[item_name]["quantity"] += 1
         else:
-            order[item_name] = {'price': item_data['price'], 'quantity': 1}
+            order[item_name] = {"id": item_id, "price": price, "quantity": 1}
         self.update_order_summary()
 
     def update_order_summary(self):
         self.order_list.clear()
         total_price = 0
-        current_order = self.table_data.get('order', {})
+        current_order = self.table_data.get("order", {})
         if not isinstance(current_order, dict):
-            current_order = {} 
+            current_order = {}
         for item_name, details in current_order.items():
             item_widget = self.create_order_item_widget(item_name, details)
             list_item = QListWidgetItem(self.order_list)
             list_item.setSizeHint(item_widget.sizeHint())
             self.order_list.addItem(list_item)
             self.order_list.setItemWidget(list_item, item_widget)
-            total_price += details['price'] * details['quantity']
+            total_price += details.get("price", 0) * details.get("quantity", 0)
         self.total_label.setText(f"Tổng cộng: {total_price:,.0f} VND")
         self.checkout_button.setEnabled(bool(current_order))
 
     def create_order_item_widget(self, name, details):
         widget = QWidget()
         layout = QHBoxLayout(widget)
-        layout.setContentsMargins(0, 5, 0, 5) 
+        layout.setContentsMargins(0, 5, 0, 5)
         info_widget = QWidget()
         info_layout = QVBoxLayout(info_widget)
-        info_layout.setContentsMargins(0,0,0,0)
+        info_layout.setContentsMargins(0, 0, 0, 0)
         info_layout.setSpacing(0)
         name_label = QLabel(name)
         name_label.setObjectName("orderItemName")
-        unit_price_label = QLabel(f"@ {details['price']:,.0f} VND")
+        unit_price_label = QLabel(f"@ {details.get('price', 0):,.0f} VND")
         unit_price_label.setObjectName("orderItemUnitPrice")
         info_layout.addWidget(name_label)
         info_layout.addWidget(unit_price_label)
         controls_widget = QWidget()
         controls_layout = QHBoxLayout(controls_widget)
-        controls_layout.setContentsMargins(0,0,0,0)
+        controls_layout.setContentsMargins(0, 0, 0, 0)
         controls_layout.setAlignment(Qt.AlignmentFlag.AlignRight)
         quantity_spinbox = QSpinBox()
         quantity_spinbox.setObjectName("quantitySpinBox")
-        quantity_spinbox.setRange(1, 99)
-        quantity_spinbox.setValue(details['quantity'])
+        quantity_spinbox.setRange(0, 99)
+        quantity_spinbox.setValue(details.get("quantity", 1))
         quantity_spinbox.setFixedWidth(50)
-        quantity_spinbox.valueChanged.connect(lambda value, n=name: self.change_item_quantity(n, value))
-        price_label = QLabel(f"{details['price'] * details['quantity']:,.0f}")
+        quantity_spinbox.valueChanged.connect(
+            lambda value, n=name: self.change_item_quantity(n, value)
+        )
+        price_label = QLabel(
+            f"{details.get('price', 0) * details.get('quantity', 0):,.0f}"
+        )
         price_label.setObjectName("orderItemPriceTotal")
         price_label.setMinimumWidth(80)
         price_label.setAlignment(Qt.AlignmentFlag.AlignRight)
@@ -238,43 +298,54 @@ class OrderDialog(QDialog):
         return widget
 
     def change_item_quantity(self, item_name, quantity):
-        order = self.table_data.get('order', {})
+        order = self.table_data.get("order", {})
         if item_name in order:
-            order[item_name]['quantity'] = quantity
-        self.update_order_summary()
+            if quantity > 0:
+                order[item_name]["quantity"] = quantity
+            else:
+                del order[item_name]  # Xóa nếu số lượng là 0
+            self.update_order_summary()
 
     def remove_item_from_order(self, item_name):
-        order = self.table_data.get('order', {})
+        order = self.table_data.get("order", {})
         if item_name in order:
             del order[item_name]
-        self.update_order_summary()
+            self.update_order_summary()
 
     def handle_confirm(self):
-        if not self.table_data.get('order') or not isinstance(self.table_data.get('order'), dict):
-             QMessageBox.information(self, "Thông báo", "Chưa có món nào được gọi.")
-             return
-        self.table_data['status'] = "Có khách"
-        self.table_data['employee'] = self.current_user
+        current_order = self.table_data.get("order", {})
+        if not current_order or not isinstance(current_order, dict):
+            QMessageBox.information(self, "Thông báo", "Chưa có món nào được gọi.")
+            return
+        if self.table_data.get("id") != "takeaway":
+            self.table_data["status"] = "Có khách"
+        self.table_data["employee"] = self.current_user
         self.accept()
 
     def handle_checkout(self):
-        current_order = self.table_data.get('order', {})
-        if not current_order or not isinstance(current_order, dict): 
+        current_order = self.table_data.get("order", {})
+        if not current_order or not isinstance(current_order, dict):
             QMessageBox.warning(self, "Lỗi", "Không có đơn hàng để thanh toán.")
             return
-        total_price = sum(details['price'] * details['quantity'] for details in current_order.values())
-        reply = QMessageBox.question(self, "Xác nhận Thanh toán",
-                                     f"Tổng hóa đơn là: {total_price:,.0f} VND.\n\nXác nhận thanh toán và in hóa đơn?",
-                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        total_price = sum(
+            details.get("price", 0) * details.get("quantity", 0)
+            for details in current_order.values()
+        )
+        reply = QMessageBox.question(
+            self,
+            "Xác nhận Thanh toán",
+            f"Tổng hóa đơn là: {total_price:,.0f} VND.\n\nXác nhận thanh toán và in hóa đơn?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
         if reply == QMessageBox.StandardButton.Yes:
             try:
                 receipt = {
                     "id": str(uuid.uuid4()),
-                    "table_id": self.table_data['id'],
+                    "table_id": self.table_data.get("id", "N/A"),
                     "employee": self.current_user,
                     "timestamp": datetime.datetime.now().isoformat(),
-                    "items": current_order, 
-                    "total": total_price
+                    "items": current_order.copy(),
+                    "total": total_price,
                 }
                 save_receipt(receipt)
                 self.print_receipt_pdf(receipt)
@@ -282,43 +353,52 @@ class OrderDialog(QDialog):
                 print(f"Lỗi khi lưu/in hóa đơn: {e}")
                 QMessageBox.critical(self, "Lỗi", f"Không thể lưu hoặc in hóa đơn: {e}")
                 return
-            self.table_data['order'] = {}
-            self.table_data['status'] = "Trống"
-            self.table_data['employee'] = None
-            QMessageBox.information(self, "Thành công", f"Đã thanh toán cho Bàn {self.table_data['id']}.\nHóa đơn PDF đã được tạo.")
+            self.table_data["order"] = {}
+            self.table_data["employee"] = None
+            if self.table_data.get("id") != "takeaway":
+                self.table_data["status"] = "Trống"
+            QMessageBox.information(
+                self,
+                "Thành công",
+                f"Đã thanh toán thành công.\nHóa đơn PDF đã được tạo.",
+            )
             self.accept()
 
-    # --- CẬP NHẬT: Hàm in PDF ---
     def print_receipt_pdf(self, receipt_data):
         if not REPORTLAB_INSTALLED:
-            QMessageBox.critical(self, "Lỗi", "Thư viện 'reportlab' chưa được cài đặt.\nKhông thể in PDF. Vui lòng cài đặt: pip install reportlab")
+            QMessageBox.critical(
+                self,
+                "Lỗi",
+                "Thư viện 'reportlab' chưa được cài đặt.\nKhông thể in PDF. Vui lòng cài đặt: pip install reportlab",
+            )
             return
-
-        # --- 1. Đăng ký Font (Quan trọng) ---
         font_name = "VNF_Arial"
-        # --- SỬA LẠI: 'fonts' (đúng như trong ảnh) và dùng PROJECT_ROOT ---
-        font_path = os.path.join(PROJECT_ROOT, 'fonts', 'times.ttf')
-        # -----------------------------------------------------------
-        
+        font_path = os.path.join(PROJECT_ROOT, "fonts", "Arial.ttf")
         try:
             pdfmetrics.registerFont(TTFont(font_name, font_path))
         except Exception as e:
             print(f"Lỗi đăng ký font: {e}")
-            print(f"HƯỚNG DẪN: Đảm bảo file 'times.ttf' có trong thư mục '{os.path.join(PROJECT_ROOT, 'fonts')}'")
-            QMessageBox.warning(self, "Lỗi Font", "Không tìm thấy file font 'times.ttf' trong thư mục 'fonts'.\nFile PDF sẽ dùng font mặc định và có thể lỗi tiếng Việt.")
+            print(
+                f"HƯỚNG DẪN: Đảm bảo file 'Arial.ttf' có trong thư mục '{os.path.join(PROJECT_ROOT, 'fonts')}'"
+            )
+            QMessageBox.warning(
+                self,
+                "Lỗi Font",
+                "Không tìm thấy file font 'Arial.ttf' trong thư mục 'fonts'.\nFile PDF sẽ dùng font mặc định và có thể lỗi tiếng Việt.",
+            )
             font_name = "Helvetica"
-
-        # --- 2. Tạo file và Canvas ---
-        now = datetime.datetime.fromisoformat(receipt_data['timestamp'])
-        filename = f"HD_{now.strftime('%Y%m%d_%H%M%S')}_{receipt_data['id'][:4]}.pdf"
+        now_dt = datetime.datetime.now()  # Lấy giờ hiện tại để dùng nếu timestamp lỗi
+        try:
+            now = datetime.datetime.fromisoformat(receipt_data["timestamp"])
+        except (ValueError, TypeError):
+            now = now_dt  # Dùng giờ hiện tại nếu lỗi
+        filename = (
+            f"HD_{now.strftime('%Y%m%d_%H%M%S')}_{receipt_data.get('id','N-A')[:4]}.pdf"
+        )
         filepath = os.path.join(RECEIPTS_PRINT_DIR, filename)
-
         receipt_width = 80 * mm
         receipt_height = 200 * mm
-        
         c = canvas.Canvas(filepath, pagesize=(receipt_width, receipt_height))
-
-        # (Phần còn lại của hàm print_receipt_pdf giữ nguyên)
         y = receipt_height - (10 * mm)
         margin_left = 7 * mm
         margin_right = receipt_width - margin_left
@@ -333,16 +413,20 @@ class OrderDialog(QDialog):
         c.drawCentredString(receipt_width / 2, y, "============================")
         y -= line_height_normal
         c.setFont(font_name, 10)
-        c.drawCentredString(receipt_width / 2, y, f"HOÁ ĐƠN (Bàn {receipt_data['table_id']})")
+        table_id = receipt_data.get("table_id")
+        table_id_display = f"Bàn {table_id}" if isinstance(table_id, int) else "Mang về"
+        c.drawCentredString(receipt_width / 2, y, f"HOÁ ĐƠN ({table_id_display})")
         y -= line_height_normal
         c.setFont(font_name, 9)
-        c.drawString(margin_left, y, f"Mã HĐ: {receipt_data['id'][:8]}...")
+        c.drawString(margin_left, y, f"Mã HĐ: {receipt_data.get('id','N/A')[:8]}...")
         y -= line_height_small
         c.drawString(margin_left, y, f"Ngày: {now.strftime('%Y-%m-%d %H:%M:%S')}")
         y -= line_height_small
-        c.drawString(margin_left, y, f"Thu ngân: {receipt_data['employee']}")
+        c.drawString(margin_left, y, f"Thu ngân: {receipt_data.get('employee','N/A')}")
         y -= line_height_normal
-        c.drawCentredString(receipt_width / 2, y, "--------------------------------------------------")
+        c.drawCentredString(
+            receipt_width / 2, y, "--------------------------------------------------"
+        )
         y -= line_height_normal
         c.setFont(font_name, 9)
         c.drawString(margin_left, y, "Tên món")
@@ -350,23 +434,31 @@ class OrderDialog(QDialog):
         c.drawRightString(margin_right - (15 * mm), y, "Đ.Giá")
         c.drawRightString(margin_right - (30 * mm), y, "SL")
         y -= line_height_small
-        items = receipt_data.get('items', {})
+        items = receipt_data.get("items", {})
         for item_name, details in items.items():
             y -= line_height_normal
-            qty = details.get('quantity', 0)
-            price = details.get('price', 0)
+            qty = details.get("quantity", 0)
+            price = details.get("price", 0)
             subtotal = qty * price
-            name = (item_name[:12] + '..') if len(item_name) > 14 else item_name
+            name = (
+                (str(item_name)[:12] + "..")
+                if len(str(item_name)) > 14
+                else str(item_name)
+            )
             c.setFont(font_name, 9)
             c.drawString(margin_left, y, name)
             c.drawRightString(margin_right, y, f"{subtotal:,.0f}")
             c.drawRightString(margin_right - (15 * mm), y, f"{price:,.0f}")
             c.drawRightString(margin_right - (30 * mm), y, str(qty))
         y -= line_height_normal
-        c.drawCentredString(receipt_width / 2, y, "--------------------------------------------------")
+        c.drawCentredString(
+            receipt_width / 2, y, "--------------------------------------------------"
+        )
         y -= line_height_normal
         c.setFont(font_name, 12)
-        c.drawRightString(margin_right, y, f"TỔNG CỘNG: {receipt_data['total']:,.0f} VND")
+        c.drawRightString(
+            margin_right, y, f"TỔNG CỘNG: {receipt_data.get('total', 0):,.0f} VND"
+        )
         y -= line_height_normal * 2
         c.setFont(font_name, 10)
         c.drawCentredString(receipt_width / 2, y, "Cảm ơn quý khách!")
@@ -374,73 +466,22 @@ class OrderDialog(QDialog):
         c.drawCentredString(receipt_width / 2, y, "Hẹn gặp lại!")
         c.showPage()
         c.save()
-
         try:
-            if platform.system() == 'Windows':
+            if platform.system() == "Windows":
                 os.startfile(filepath)
-            elif platform.system() == 'Darwin':
-                subprocess.run(['open', filepath])
+            elif platform.system() == "Darwin":
+                subprocess.run(["open", filepath])
             else:
-                subprocess.run(['xdg-open', filepath])
+                subprocess.run(["xdg-open", filepath])
         except Exception as e:
             print(f"Không thể mở file PDF: {e}")
-            QMessageBox.warning(self, "Lỗi in", f"Không thể tự động mở file PDF.\nFile đã được lưu tại: {filepath}")
+            QMessageBox.warning(
+                self,
+                "Lỗi in",
+                f"Không thể tự động mở file PDF.\nFile đã được lưu tại: {filepath}",
+            )
 
-    # (Hàm apply_stylesheet giữ nguyên)
     def apply_stylesheet(self):
-        self.setStyleSheet("""
-            QDialog { background-color: #f0f2f5; font-family: Inter; }
-            QFrame#categoryPanel, QFrame#orderPanel { 
-                background-color: #ffffff; 
-                border-radius: 8px; 
-            }
-            #panelTitle { 
-                font-size: 18px; font-weight: bold; padding: 10px; 
-                color: #343a40; border-bottom: 1px solid #e9ecef; 
-            }
-            QListWidget, #menuScrollArea { border: none; }
-            
-            #categoryList::item { 
-                padding: 12px 15px; border-bottom: 1px solid #f0f2f5; font-size: 15px;
-            }
-            #categoryList::item:selected { 
-                background-color: #e7f3ff; color: #007bff; font-weight: bold;
-                border-left: 3px solid #007bff;
-            }
-            
-            QPushButton#gridMenuItem { 
-                background-color: #ffffff; border: 1px solid #dee2e6;
-                border-radius: 8px; text-align: center;
-            }
-            QPushButton#gridMenuItem:hover { background-color: #f8f9fa; }
-            #gridItemImage { 
-                background-color: #f8f9fa; border-radius: 8px; font-size: 40px; 
-                color: #adb5bd; qproperty-alignment: 'AlignCenter';
-            }
-            #gridItemName { font-size: 14px; font-weight: bold; color: #212529; }
-            #gridItemPrice { font-size: 13px; color: #495057; }
-            
-            /* --- Order Summary Styles --- */
-            #orderList::item { border-bottom: 1px solid #f0f2f5; }
-            #orderItemName { font-size: 15px; font-weight: 500; color: #212529; }
-            #orderItemUnitPrice { font-size: 12px; color: #6c757d; }
-            #orderItemPriceTotal { font-size: 14px; color: #212529; font-weight: 500; }
-            #totalLabel { font-size: 20px; font-weight: bold; color: #28a745; padding: 10px; }
-            #removeButton { background-color: transparent; border: none; font-size: 16px; }
-            QSpinBox#quantitySpinBox {
-                border: 1px solid #ced4da;
-                border-radius: 4px;
-                padding: 10px;
-                margin-left: -5px;
-            }
-            
-            /* --- Button Styles --- */
-            QPushButton { padding: 10px 15px; border-radius: 5px; font-weight: bold; border: 1px solid #ced4da; }
-            QPushButton#confirmButton { background-color: #007bff; color: white; border: none; }
-            QPushButton#checkoutButton { background-color: #28a745; color: white; border: none; }
-            QPushButton#cancelButton { background-color: #6c757d; color: white; border: none; }
-            QPushButton:hover { background-color: #e9ecef; }
-            QPushButton#confirmButton:hover { background-color: #0056b3; }
-            QPushButton#checkoutButton:hover { background-color: #218838; }
-            QPushButton#cancelButton:hover { background-color: #5a6268; }
-        """)
+        self.setStyleSheet(
+            """QDialog { background-color: #f0f2f5; font-family: Inter; } QFrame#categoryPanel, QFrame#orderPanel { background-color: #ffffff; border-radius: 8px; } #panelTitle { font-size: 18px; font-weight: bold; padding: 10px; color: #343a40; border-bottom: 1px solid #e9ecef; } QListWidget, #menuScrollArea { border: none; } #categoryList::item { padding: 12px 15px; border-bottom: 1px solid #f0f2f5; font-size: 15px;} #categoryList::item:selected { background-color: #e7f3ff; color: #007bff; font-weight: bold; border-left: 3px solid #007bff; } QPushButton#gridMenuItem { background-color: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; text-align: center; } QPushButton#gridMenuItem:hover { background-color: #f8f9fa; } #gridItemImage { background-color: #f8f9fa; border-radius: 8px; font-size: 40px; color: #adb5bd; qproperty-alignment: 'AlignCenter'; } #gridItemName { font-size: 14px; font-weight: bold; color: #212529; } #gridItemPrice { font-size: 13px; color: #495057; } #orderList::item { border-bottom: 1px solid #f0f2f5; } #orderItemName { font-size: 15px; font-weight: 500; color: #212529; } #orderItemUnitPrice { font-size: 12px; color: #6c757d; } #orderItemPriceTotal { font-size: 14px; color: #212529; font-weight: 500; } #totalLabel { font-size: 20px; font-weight: bold; color: #28a745; padding: 10px; } #removeButton { background-color: transparent; border: none; font-size: 16px; } QSpinBox#quantitySpinBox { border: 1px solid #ced4da; border-radius: 4px; padding: 10px; margin-left: -5px; } QPushButton { padding: 10px 15px; border-radius: 5px; font-weight: bold; border: 1px solid #ced4da; } QPushButton#confirmButton { background-color: #007bff; color: white; border: none; } QPushButton#checkoutButton { background-color: #28a745; color: white; border: none; } QPushButton#cancelButton { background-color: #6c757d; color: white; border: none; } QPushButton:hover { background-color: #e9ecef; } QPushButton#confirmButton:hover { background-color: #0056b3; } QPushButton#checkoutButton:hover { background-color: #218838; } QPushButton#cancelButton:hover { background-color: #5a6268; } """
+        )
